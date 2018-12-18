@@ -16,7 +16,7 @@ class CoinManager {
 		this.getMal = sec => {
 			var now = new Date() * 1;
 			var millisec = sec * 1000;
-			return this.chartData.filter(item => now - item.date < term).map(data => {
+			return this.chartData.filter(item => now - item.date < millisec).map(data => {
 				var count = 0;
 				return this.chartData.reduce((pre, current) => {
 					if (current.date <= data.date && data.date - current.date <= millisec) {
