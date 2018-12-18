@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Page Title</title>
+	<link rel="stylesheet" href="/css/index.css">
+	<script src="/js/jquery-3.3.1.js"></script>
+	<script src="/js/Chart.min.js"></script>
+	<script src="/js/index_chart.js"></script>
+	<script src="/js/index_bithumb.js"></script>
+</head>
+
+<body>
+	<div id="header">
+		<div id="titleFrame">Virual Currency Info</div>
+	</div>
+	<div id="mainFrame">
+		<div id="coinListFrame">
+			<div id="sortButton" onclick="sortCoin()">Sort</div>
+		</div>
+		<div id="chartFrame"> <canvas id="chart"></canvas> </div>
+	</div>
+	<script>
+		let coinListFrame = $('#coinListFrame')
+		let coinList = ['btc', 'eos', 'ada'].map(coin => coin.toUpperCase())
+		let currentCoin = coinList[0]
+		coinList.forEach(coin => coinListFrame.append('<div class="coinListItem" id="coinInfo' + coin + '" onclick="onClickInfo(\'' + coin + '\')">' +
+			'<div class="coinInfoName" id="coinInfo' + coin + 'Name">' + coin + '</div>' +
+			'<div class="coinInfoDiff" id="coinInfo' + coin + 'Diff">Dif</div></div>'))
+		let coinInfoItem = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin); return arr }, [])
+		let coinInfoName = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Name'); return arr }, [])
+		let coinInfoDiff = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Diff'); return arr }, [])
+		const coinManagers = coinList.map(coin => new CoinManager(coin, updated))
+
+		var chartData = []
+		var ctx = document.getElementById("chart").getContext('2d');
+		var chart = chart(ctx)
+
+		function onClickInfo(item) {
+			currentCoin = item
+		}
+
+		function updated(manager) {
+			if (manager.coin == currentCoin) {
+				var data = manager.getData(60)
+				chart.options.title.text = '[ ' + manager.coin + ']'
+				chart.data.labels = data.times
+				chart.data.datasets[0].data = data.prices
+				chart.data.datasets[1].data = manager.getMal(60)
+				chart.update()
+			}
+			coinInfoDiff[manager.coin].text(manager.recent['24H_fluctate_rate'])
+			coinInfoItem[manager.coin].data('flucate', manager.recent['24H_fluctate_rate'])
+		}
+
+		function sortCoin() {
+			console.log($('.coinListItem').eq())
+			$('.coinListItem').eq().sort(function (a, b) {
+				console.log(a, b)
+			}).appendTo('#coinListFrame');
+		}
+	</script>
+</body>
+
+</html>
