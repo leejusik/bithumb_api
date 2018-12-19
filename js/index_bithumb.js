@@ -1,6 +1,7 @@
-// 저녁에 7시 반부터 가능한 새론중
-// 달에 15,000원
-// +라켓값
+function round(value, digit = 1) {
+	digit = Math.pow(10, digit)
+	return Math.round(value * digit) / digit
+}
 
 class CoinManager {
 	constructor(coin, callback, signalFunction, malSec = 60) {
@@ -15,32 +16,33 @@ class CoinManager {
 			var term = sec * 1000
 			var currentData = this.chartData.filter(item => now - item.date < term)
 			return {
+				data: currentData,
 				times: currentData.map(item => Math.round((item.date - now) / 1000)),
-				prices: currentData.map(item => item.closing_price),
-				mal: currentData.map(item => item.mal),
+				prices: currentData.map(item => round(item.closing_price, 3)),
+				mal: currentData.map(item => round(item.mal)),
 			}
 		}
 		setInterval(() => {
 			$.ajax({
 				url: 'https://api.bithumb.com/public/ticker/' + coin,
 				success: data => {
+					var data = data.data
 					var now = new Date() * 1
 					var count = 0
-					data.data.mal = chartData.reduce((pre, current) => {
-						if (now - current.date <= malSec * 1000) {
-							count++
-							return pre + current.closing_price * 1
-						}
-						else return pre
+					var mal = this.chartData.reduce((pre, current) => {
+						if (now - current.date > malSec * 1000) return pre
+						count++
+						return pre + current.closing_price * 1
 					}, 0) / count
-					if (signalFunction) data.signals = signalFunction(recent, data.data)
-					this.chartData.push(data.data)
-					this.recent = data.data
+					data.mal = mal ? mal : data.closing_price * 1
+					if (signalFunction) data.signals = signalFunction(this.recent, data)
+					this.chartData.push(data)
+					if (!data) throw new Error('!')
+					this.recent = data
 				},
 			})
 			this.chartData.length > 0 ? this.callback(this) : undefined
-		}, 1000);
-
+		}, 1000)
 	}
 }
 

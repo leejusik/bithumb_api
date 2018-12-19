@@ -17,8 +17,9 @@
 		<div id="titleFrame">Virual Currency Info</div>
 	</div>
 	<div id="mainFrame">
-		<div id="coinListFrame">
+		<div id="sideFrame">
 			<div id="sortButton" onclick="sortCoin()">Sort</div>
+			<div id="coinListFrame"> </div>
 		</div>
 		<div id="chartFrame"> <canvas id="chart"></canvas> </div>
 	</div>
@@ -29,10 +30,10 @@
 		coinList.forEach(coin => coinListFrame.append('<div class="coinListItem" id="coinInfo' + coin + '" onclick="onClickInfo(\'' + coin + '\')">' +
 			'<div class="coinInfoName" id="coinInfo' + coin + 'Name">' + coin + '</div>' +
 			'<div class="coinInfoDiff" id="coinInfo' + coin + 'Diff">Dif</div></div>'))
-		let coinInfoItem = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin); return arr }, [])
-		let coinInfoName = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Name'); return arr }, [])
-		let coinInfoDiff = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Diff'); return arr }, [])
-		const coinManagers = coinList.map(coin => new CoinManager(coin, updated, signalFunction))
+		var coinInfoItem = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin); return arr }, [])
+		var coinInfoName = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Name'); return arr }, [])
+		var coinInfoDiff = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Diff'); return arr }, [])
+		const coinManagers = coinList.reduce((arr, coin) => { arr[coin] = new CoinManager(coin, updated, signalFunction); return arr }, {})
 
 		var chartData = []
 		var ctx = document.getElementById("chart").getContext('2d');
@@ -43,9 +44,13 @@
 		}
 
 		function signalFunction(bef, cur) {
-			return {
-				signA: cur.prices - cur.mal > 0 && bef.prices - bef.mal < 0,
-				signB: cur.prices - cur.mal < 0 && bef.prices - bef.mal > 0
+			try {
+				return {
+					signA: cur.closing_price >= cur.mal && bef.closing_price < bef.mal ? 1 : -1, //이평선보다 현재가가 내려가면
+					signB: cur.closing_price <= cur.mal && bef.closing_price > bef.mal ? 1 : -1  //이평선보다 현재가가 올라가면
+				}
+			} catch{
+
 			}
 		}
 
@@ -67,10 +72,12 @@
 
 		function showSignal(data, name, color, text) {
 			var meta = chart.getDatasetMeta(1);
-			data.times.forEach(index => {
-				if (!data.signals[name]) return
-				var x = (meta.data[index]._model.x + meta.data[index - 1]._model.x) / 2;
-				var y = (meta.data[index]._model.y + meta.data[index - 1]._model.y) / 2;
+			data.data.forEach((cur, index) => {
+				if (!cur.signals) return
+				if (!cur.signals[name]) return
+				if (cur.signals[name] < 0) return
+				var x = (meta.data[index]._model.x + meta.data[index - 1]._model.x) / 2
+				var y = (meta.data[index]._model.y + meta.data[index - 1]._model.y) / 2
 				ctx.fillStyle = color
 				ctx.fillRect(x - 3, y - 3, 6, 6)
 				ctx.fillStyle = '#aaaaaa'
@@ -79,10 +86,38 @@
 		}
 
 		function sortCoin() {
-			console.log($('.coinListItem').eq())
-			$('.coinListItem').eq().sort(function (a, b) {
-				console.log(a, b)
-			}).appendTo('#coinListFrame');
+			coinListFrame.text('')
+			coinList.sort(
+				(a, b) => {
+					var dataA = coinManagers[a].recent
+					var dataB = coinManagers[b].recent
+
+					if (!(dataA &&
+						dataB &&
+						dataA.closing_price &&
+						dataB.closing_price &&
+						dataA['24H_fluctate_rate'] &&
+						dataA['24H_fluctate_rate']))
+						throw new Error('Err')
+
+					//먼저 현재가와 이평선으로 비교한다.
+					if (dataA.closing_price < dataA.mal) return 1
+					if (dataB.closing_price < dataB.mal) return -1
+
+					//만약 둘 다 현재가 이평선 비교값이 같다면, 즉 둘 다 현재가가 이평선보다 위에 있거나 밑에 있다면 변동률로 비교한다.
+					if (dataA['24H_fluctate_rate'] < dataB['24H_fluctate_rate']) return 1
+					if (dataA['24H_fluctate_rate'] > dataB['24H_fluctate_rate']) return -1
+
+					return 0
+				}
+			)
+			coinList.forEach(coin => coinListFrame.append('<div class="coinListItem" id="coinInfo' + coin + '" onclick="onClickInfo(\'' + coin + '\')">' +
+				'<div class="coinInfoName" id="coinInfo' + coin + 'Name">' + coin + '</div>' +
+				'<div class="coinInfoDiff" id="coinInfo' + coin + 'Diff">Dif</div></div>'))
+
+			coinInfoItem = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin); return arr }, [])
+			coinInfoName = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Name'); return arr }, [])
+			coinInfoDiff = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Diff'); return arr }, [])
 		}
 	</script>
 </body>

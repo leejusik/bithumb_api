@@ -23,6 +23,13 @@ body{
 	display: flex;
 }
 
+#sideFrame{
+	padding-left: 5%;
+	padding-right: 5%;
+	display: flex;
+	flex-direction: column;
+}
+
 #sortButton{
 	margin:16px;
 	background-color: #888;
