@@ -43,6 +43,9 @@ function chart(ctx) {
 				line: {
 					tension: 0.15, // disables bezier curves
 				}
+			},
+			animation: {
+				duration: 0
 			}
 		}
 	})

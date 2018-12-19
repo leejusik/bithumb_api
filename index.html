@@ -32,7 +32,7 @@
 		let coinInfoItem = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin); return arr }, [])
 		let coinInfoName = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Name'); return arr }, [])
 		let coinInfoDiff = coinList.reduce((arr, coin) => { arr[coin] = $('#coinInfo' + coin + 'Diff'); return arr }, [])
-		const coinManagers = coinList.map(coin => new CoinManager(coin, updated))
+		const coinManagers = coinList.map(coin => new CoinManager(coin, updated, signalFunction))
 
 		var chartData = []
 		var ctx = document.getElementById("chart").getContext('2d');
@@ -42,17 +42,40 @@
 			currentCoin = item
 		}
 
+		function signalFunction(bef, cur) {
+			return {
+				signA: cur.prices - cur.mal > 0 && bef.prices - bef.mal < 0,
+				signB: cur.prices - cur.mal < 0 && bef.prices - bef.mal > 0
+			}
+		}
+
 		function updated(manager) {
 			if (manager.coin == currentCoin) {
 				var data = manager.getData(60)
 				chart.options.title.text = '[ ' + manager.coin + ']'
 				chart.data.labels = data.times
 				chart.data.datasets[0].data = data.prices
-				chart.data.datasets[1].data = manager.getMal(60)
+				chart.data.datasets[1].data = data.mal
+
 				chart.update()
+				showSignal(data, 'signA', '#aa0000', 'Sell')
+				showSignal(data, 'signB', '#0000aa', 'Buy')
 			}
 			coinInfoDiff[manager.coin].text(manager.recent['24H_fluctate_rate'])
 			coinInfoItem[manager.coin].data('flucate', manager.recent['24H_fluctate_rate'])
+		}
+
+		function showSignal(data, name, color, text) {
+			var meta = chart.getDatasetMeta(1);
+			data.times.forEach(index => {
+				if (!data.signals[name]) return
+				var x = (meta.data[index]._model.x + meta.data[index - 1]._model.x) / 2;
+				var y = (meta.data[index]._model.y + meta.data[index - 1]._model.y) / 2;
+				ctx.fillStyle = color
+				ctx.fillRect(x - 3, y - 3, 6, 6)
+				ctx.fillStyle = '#aaaaaa'
+				ctx.fillText(text, x + 5, y);
+			})
 		}
 
 		function sortCoin() {
