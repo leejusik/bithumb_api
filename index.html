@@ -63,8 +63,8 @@
 				chart.data.datasets[1].data = data.mal
 
 				chart.update()
-				showSignal(data, 'signA', '#aa0000', 'Sell')
-				showSignal(data, 'signB', '#0000aa', 'Buy')
+				showSignal(data, 'signA', '#aa0000', 'Buy')
+				showSignal(data, 'signB', '#0000aa', 'Sell')
 			}
 			coinInfoDiff[manager.coin].text(manager.recent['24H_fluctate_rate'])
 			coinInfoItem[manager.coin].data('flucate', manager.recent['24H_fluctate_rate'])
